@@ -49,6 +49,8 @@
             }
 
             this.url = url;
+            this.scale = 1.0;
+            this.$element = $element;
             this.$cropper = $(this.defaults.fixed ? Cropper.template_fixed : Cropper.template_free);
             this.$dragger = this.$cropper.find(".cropper-dragger");
 
@@ -186,13 +188,16 @@
                 image.aspectRatio = image.naturalWidth / image.naturalHeight;
                 that.image = image;
                 that.setCropper();
+                that.scale = Math.min(that.cropper.width / image.naturalWidth, that.cropper.height / image.naturalHeight);
 
                 $this.hide();
                 $this.parent().css({
                     'background-image': 'url(' + this.src + ')',
                     'background-repeat': 'no-repeat',
-                    'background-size': '100%',
+                    'background-size': image.naturalWidth * that.scale,
                 });
+                that.resetDragger();
+                that.preview();
             });
 
             this.$cropper.prepend($image);
@@ -302,7 +307,7 @@
         },
 
         transformData: function(data, type) {
-            var ratio = this.image.ratio,
+            var ratio = this.scale,
                 keys = /^(x1|y1|x2|y2|width|height)$/i,
                 result = {};
 
@@ -327,7 +332,11 @@
             }
 
             if ($.isPlainObject(data) && !$.isEmptyObject(data)) {
-                data = this.transformData(data, "set");
+                if ($.isNumeric(data.scale) ) {
+                    this.scale = data.scale;
+                    var $element = this.$element.parent().find('.cropper-container');
+                    $element.css('background-size', this.image.naturalWidth * this.scale);
+                }
 
                 if ($.isNumeric(data.x1) && data.x1 >= 0 && data.x1 <= cropper.width) {
                     dragger.left = data.x1;
@@ -370,8 +379,8 @@
                     left: dragger.left,
                     top: dragger.top,
                 });
-                dragger.left = -this.$dragger.position().left;
-                dragger.top = -this.$dragger.position().top;
+                dragger.left = -data.x1 * this.scale;
+                dragger.top = -data.y1 * this.scale;
             }
 
             this.dragger = dragger;
@@ -394,7 +403,7 @@
                     width: dragger.width,
                     height: dragger.height,
                     x2: k*dragger.left + dragger.width,
-                    y2: k*dragger.top + dragger.height
+                    y2: k*dragger.top + dragger.height,
                 }, "get");
             }
 
@@ -408,8 +417,8 @@
             dragger.width = dragger.width > dragger.maxWidth ? dragger.maxWidth : Math.abs(dragger.width);
             dragger.height = dragger.height > dragger.maxHeight ? dragger.maxHeight : Math.abs(dragger.height);
 
-            dragger.maxLeft = cropper.width - dragger.width;
-            dragger.maxTop = cropper.height - dragger.height;
+            dragger.maxLeft = this.image.naturalWidth * this.scale - dragger.width;
+            dragger.maxTop = this.image.naturalHeight * this.scale - dragger.height;
 
             if ( !this.defaults.fixed ){
                 dragger.left = dragger.left < 0 ? 0 : dragger.left > dragger.maxLeft ? dragger.maxLeft : dragger.left;
@@ -424,8 +433,18 @@
                     width: dragger.width
                 });
             } else {
-                dragger.left = Math.max(Math.min(dragger.left, 0), -dragger.maxLeft);
-                dragger.top = Math.max(Math.min(dragger.top, 0), -dragger.maxTop);
+
+                if ( dragger.width / this.scale < this.image.naturalWidth ){
+                    dragger.left = Math.max(Math.min(dragger.left, 0), -dragger.maxLeft);
+                } else {
+                    dragger.left = Math.min(Math.max(dragger.left, 0), -dragger.maxLeft);
+                }
+
+                if ( dragger.height / this.scale < this.image.naturalHeight ){
+                    dragger.top = Math.max(Math.min(dragger.top, 0), -dragger.maxTop);
+                } else {
+                    dragger.top = Math.min(Math.max(dragger.top, 0), -dragger.maxTop);
+                }
 
                 dragger = Cropper.fn.round(dragger);
 
@@ -624,10 +643,10 @@
                 var $this = $(this),
                     ratio = $this.outerWidth() / dragger.width,
                     styles = {
-                        height: cropper.height,
+                        height: that.image.naturalHeight * that.scale,
                         marginLeft: - dragger.left - 1,
                         marginTop: - dragger.top - 1,
-                        width: cropper.width
+                        width: that.image.naturalWidth * that.scale,
                     };
 
                 if ( that.defaults.fixed ){
