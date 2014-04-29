@@ -330,7 +330,8 @@
         setData: function(data) {
             var cropper = this.cropper,
                 dragger = this.dragger,
-                aspectRatio = this.defaults.aspectRatio;
+                aspectRatio = this.defaults.aspectRatio,
+                $element = this.$element.parent().find('.cropper-container');
 
             if (!this.active) {
                 return;
@@ -339,7 +340,6 @@
             if ($.isPlainObject(data) && !$.isEmptyObject(data)) {
                 if ($.isNumeric(data.scale) ) {
                     this.scale = data.scale;
-                    var $element = this.$element.parent().find('.cropper-container');
                     $element.css('background-size', this.image.naturalWidth * this.scale);
                 }
 
@@ -394,10 +394,10 @@
 
         getData: function() {
             var dragger = this.dragger,
-                data = {};
+                data = {},
+                k = 1;
 
             if (this.active) {
-                var k = 1;
                 if ( this.defaults.fixed ){
                     k = -1;
                 }
@@ -417,7 +417,9 @@
 
         resetDragger: function() {
             var dragger = this.dragger,
-                cropper = this.cropper;
+                offset,
+                left,
+                top ;
 
             dragger.width = dragger.width > dragger.maxWidth ? dragger.maxWidth : Math.abs(dragger.width);
             dragger.height = dragger.height > dragger.maxHeight ? dragger.maxHeight : Math.abs(dragger.height);
@@ -452,10 +454,9 @@
                 }
 
                 dragger = Cropper.fn.round(dragger);
-
-                var offset = this.$dragger.position(),
-                    left = dragger.left + offset.left,
-                    top = dragger.top + offset.top;
+                offset = this.$dragger.position();
+                left = dragger.left + offset.left;
+                top = dragger.top + offset.top;
 
                 this.$dragger.css({
                     height: dragger.height,
@@ -641,7 +642,6 @@
 
         preview: function() {
             var that = this,
-                cropper = that.cropper,
                 dragger = that.dragger;
 
             this.$preview.each(function() {
