@@ -42,7 +42,7 @@
                 return;
             }
 
-            url = url || $element.prop("src");
+            url = url || $element.attr("src");
 
             if (!url) {
                 throw new Error("Invalid image!");
@@ -53,6 +53,11 @@
             this.$element = $element;
             this.$cropper = $(this.defaults.fixed ? Cropper.template_fixed : Cropper.template_free);
             this.$dragger = this.$cropper.find(".cropper-dragger");
+
+            /* update image src when changing image */
+            if ( $element.attr("src") ){
+                $element.attr("src", url);
+            }
 
             Cropper.fn.toggle($element);
             $element.after(this.$cropper);
